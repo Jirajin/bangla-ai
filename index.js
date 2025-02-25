@@ -11,7 +11,7 @@ const model = genAI.getGenerativeModel({
 });
 
 const generationConfig = {
-  temperature: 0.7,
+  temperature: 1,
   topP: 0.95,
   topK: 40,
   maxOutputTokens: 8192,
@@ -37,59 +37,93 @@ const safetySettings = [
   },
 ];
 
-// DOM Elements
-const promptInput = document.getElementById("promptInput");
-const generateBtn = document.getElementById("generateBtn");
-const stopBtn = document.getElementById("stopBtn");
-const resultText = document.getElementById("resultText");
+document.addEventListener('DOMContentLoaded', function() {
+  // DOM Elements
+  const promptInput = document.getElementById("promptInput");
+  const generateBtn = document.getElementById("generateBtn");
+  const resultText = document.getElementById("resultText");
+  const stopBtn = document.getElementById("stopBtn");
 
-let controller; // To allow request cancellation
+  let controller; // To allow request cancellation
 
-async function generate() {
-  resultText.innerText = "Generating...";
-  controller = new AbortController(); // Signal for aborting request if needed
-  const userInput = promptInput.value;
+  // Add custom CSS for the result text to ensure single column layout
+  const style = document.createElement('style');
+  style.textContent = `
+    #resultText {
+      column-count: 1 !important;
+      column-span: all !important;
+      display: block !important;
+      width: 100% !important;
+    }
+  `;
+  document.head.appendChild(style);
 
-  try {
-    const chat = model.startChat({
-      generationConfig,
-      safetySettings,
+  // Prevent the default form submission
+  if (document.getElementById('email-form-2')) {
+    document.getElementById('email-form-2').addEventListener('submit', function(e) {
+      e.preventDefault(); // This prevents the form from actually submitting
+      generate();
     });
+  }
 
-    // Structured prompt
-    const prompt = ` Question: ${userInput}.`;
+  async function generate() {
+    resultText.innerText = "Generating...";
+    
+    controller = new AbortController(); // Signal for aborting request if needed
+    const userInput = promptInput.value;
 
-    const result = await chat.sendMessage(prompt, {
-      signal: controller.signal, // Allow aborting
-    });
+    try {
+      const chat = model.startChat({
+        generationConfig,
+        safetySettings,
+      });
 
-    const response = result.response.text(); // Retrieve the response text
-    const markdown = marked(response);
+      // Structured prompt
+      const prompt = ` Question: ${userInput}.`;
 
-    resultText.innerHTML = markdown; // Display the formatted text
-    console.log(response);
-  } catch (error) {
-    if (controller.signal.aborted) {
-      resultText.innerText = "Request aborted.";
-    } else {
-      console.error("Error:", error);
-      resultText.innerText = "Error occurred while generating.";
+      const result = await chat.sendMessage(prompt, {
+        signal: controller.signal, // Allow aborting
+      });
+
+      const response = result.response.text(); // Retrieve the response text
+      const markdown = marked(response);
+
+      resultText.innerHTML = markdown; // Display the formatted text
+      console.log(response);
+    } catch (error) {
+      if (controller && controller.signal.aborted) {
+        resultText.innerText = "Request aborted.";
+      } else {
+        console.error("Error:", error);
+        resultText.innerText = "Error occurred while generating.";
+      }
     }
   }
-}
 
-// Event Listeners
-promptInput.addEventListener("keyup", (event) => {
-  if (event.key === "Enter") {
-    generate();
+  // Event Listeners
+  if (promptInput) {
+    promptInput.addEventListener("keyup", (event) => {
+      if (event.key === "Enter") {
+        generate();
+        promptInput.value = ""; // Clear the input field
+      }
+    });
   }
-});
 
-generateBtn.addEventListener("click", generate);
+  if (generateBtn) {
+    generateBtn.addEventListener("click", function(e) {
+      e.preventDefault(); // Prevent any default behavior
+      generate();
+      promptInput.value = ""; // Clear the input field
+    });
+  }
 
-stopBtn.addEventListener("click", () => {
-  if (controller) {
-    controller.abort();
-    console.log("Generation stopped.");
+  if (stopBtn) {
+    stopBtn.addEventListener("click", () => {
+      if (controller) {
+        controller.abort();
+        console.log("Generation stopped.");
+      }
+    });
   }
 });
