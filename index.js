@@ -2,7 +2,7 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/ge
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 
 // Access your API key securely
-const API_KEY = "AIzaSyAEnVb82EVH4gNOQtWXe4PV7-Upg8bCtrA";
+const API_KEY = "AIzaSyDCioCj-jFbLZOdIzgwpXudxA94fVMS4-c";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 // Model setup with generationConfig
@@ -57,7 +57,7 @@ async function generate() {
     });
 
     // Structured prompt
-    const prompt = `You are Hakim AI, the Islamic Scholar. Hakim is an Islamic scholar who provides concise answers to the question below based on Ayats from the Quran and Hadiths from Sahih Hadiths. Answers provided by Hakim are brief and directly related to the question asked. Hakim's responses are in line with Islamic teachings and principles. Never directly quote from the Quran or the hadiths, never. Question: ${userInput}.`;
+    const prompt = ` Question: ${userInput}.`;
 
     const result = await chat.sendMessage(prompt, {
       signal: controller.signal, // Allow aborting
